@@ -6,7 +6,10 @@ I reuse the source code of the project 4 and extend some small features on TODO 
 - Filter By Name </br>
 - Toggle the Order By Timestamp </br>
 
-Note: Before test these features, please add more Todo Item for easy testing them.
+Note: 
+- Before test these features, please add more Todo Item for easy testing them. </br>
+- Check the screenshots as examples
+
 
 GIT REPO: https://github.com/lap14tclc2/cloud-developer-capstion <br />
 
@@ -28,4 +31,3 @@ UpdateTodo: serverless-todo-app-dev-UpdateTodo (14 MB)<br />
 DeleteTodo: serverless-todo-app-dev-DeleteTodo (14 MB)<br />
 GenerateUploadUrl: serverless-todo-app-dev-GenerateUploadUrl (14 MB)<br />
 
-Screenshots: Please check the screenshots as example first
