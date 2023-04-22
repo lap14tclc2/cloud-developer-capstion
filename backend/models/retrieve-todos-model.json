@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "group",
+  "type": "object",
+  "properties": {
+    "pageSize": {
+      "type": "integer"
+    },
+    "lastItemKey": {
+      "type": ["object", "null"]
+    },
+    "orderBy": {
+      "type": "string"
+    },
+    "sortBy": {
+      "type": "string"
+    },
+    "filterBy": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": ["pageSize"],
+  "additionalProperties": false
+}

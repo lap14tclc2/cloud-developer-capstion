@@ -3,7 +3,9 @@ import { AttachmentUtils } from "../helpers/attachmentUtils";
 import { TodoItem } from "../models/TodoItem";
 import { TodoUpdate } from "../models/TodoUpdate";
 import { CreateTodoRequest } from "../requests/CreateTodoRequest";
+import { GetTodosRequest } from "../requests/RetrieveTodosRequest";
 import { UpdateTodoRequest } from "../requests/UpdateTodoRequest";
+import { RetrieveTodosResponse } from "../responses/RetrieveTodosResponse";
 import { createLogger } from "../utils/logger";
 import * as uuid from 'uuid'
 
@@ -17,6 +19,11 @@ export async function getTodosForUser(userId: string): Promise<TodoItem[]> {
 	return await todosAccess.getAllTodos(userId)
 }
 
+export async function retrieveTodos(userId: string, params: GetTodosRequest): Promise<RetrieveTodosResponse> {
+	logger.info('Retrieve todos for user ', userId + ' called')
+
+	return await todosAccess.retrieveTodos(userId, params)
+}
 
 export async function createTodo(newTodo: CreateTodoRequest, userId: string): Promise<TodoItem> {
 	logger.info('Create todo function');

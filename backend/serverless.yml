@@ -24,24 +24,14 @@ provider:
   # Use these variables in the functions and resouorces section below. For example,
   # ${self:provider.environment.ATTACHMENT_S3_BUCKET}
   environment:
-    TODOS_TABLE: Todos-${self:provider.stage}
+    TODOS_TABLE: Todos-Enhancement-${self:provider.stage}
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
-    ATTACHMENT_S3_BUCKET: lap-serverless-c4-todo-images-${self:provider.stage}
+    ATTACHMENT_S3_BUCKET: lap-project-capstone-serverless-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
-    PROJECT_NAME: Udagram-todo
 
   logs:
     # Enable API Gateway logs
     restApi: true
-
-  iam:
-    role:
-      statements:
-        - Effect: Allow
-          Action:
-            - xray:PutTelemetryRecords
-            - xray:PutTraceSegments
-          Resource: '*'
 
 custom:
   documentation:
@@ -57,6 +47,9 @@ custom:
       - name: UpdateTodoRequest
         contentType: application/json
         schema: ${file(models/update-todo-model.json)}
+      - name: RetrieveTodosRequest
+        contentType: application/json
+        schema: ${file(models/retrieve-todos-model.json)}
 functions:
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
@@ -71,7 +64,6 @@ functions:
           path: todos
           cors: true
           authorizer: Auth
-    
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -86,7 +78,44 @@ functions:
           - xray:PutTraceSegments
         Resource:
           - '*'
-          
+      - Effect: Allow
+        Action:
+            - xray:PutTelemetryRecords
+        Resource: '*'
+
+  RetrieveTodos:
+    handler: src/lambda/http/retrieveTodos.handler
+    events:
+      - http:
+          method: post
+          path: todos/retrieve
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Retrieve todos with query params
+            description: Retrieve  todos with query params
+            requestModels:
+              'application/json': RetrieveTodosRequest
+
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+        Resource:
+          - '*'
+      - Effect: Allow
+        Action:
+            - xray:PutTelemetryRecords
+        Resource: '*'
   # TODO: Configure this function -
   # Provide iamRoleStatements property. Decide the Actions and AWS Resource.
   # To refer to an AWS resource defined in the "Resources" section, you can use "Resource: !GetAtt <resource-name>.Arn"
@@ -116,7 +145,10 @@ functions:
           - xray:PutTraceSegments
         Resource:
           - '*'
-
+      - Effect: Allow
+        Action:
+            - xray:PutTelemetryRecords
+        Resource: '*'
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements, and request schemas
   UpdateTodo:
@@ -144,6 +176,10 @@ functions:
           - xray:PutTraceSegments
         Resource:
           - '*'
+      - Effect: Allow
+        Action:
+            - xray:PutTelemetryRecords
+        Resource: '*'
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements
   DeleteTodo:
@@ -165,6 +201,11 @@ functions:
           - xray:PutTraceSegments
         Resource:
           - '*'
+      - Effect: Allow
+        Action:
+            - xray:PutTelemetryRecords
+        Resource: '*'
+
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements
   GenerateUploadUrl:
@@ -191,11 +232,29 @@ functions:
           - xray:PutTraceSegments
         Resource:
           - '*'
+      - Effect: Allow
+        Action:
+            - xray:PutTelemetryRecords
+        Resource: '*'
 resources:
   Resources:
     # Add necessary AWS resources. You will need at least the following AWS resources
     # TODO: Fill the properties
     # Feel free to change the names as you like.
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:provider.stage}-${self:service}
+    GatewayResponseResourceNotFound:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: BAD_REQUEST_BODY
+        "StatusCode" : "422"
+        ResponseTemplates:
+          application/json: "{\"message\": \"$context.error.message\", \"error\": \"$context.error.validationErrorString\"}"
+
     GatewayResponseDefault4XX:
       Type: AWS::ApiGateway::GatewayResponse
       Properties:

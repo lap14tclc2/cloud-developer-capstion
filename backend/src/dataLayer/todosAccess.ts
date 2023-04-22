@@ -4,6 +4,8 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
+import { GetTodosRequest } from '../requests/RetrieveTodosRequest'
+import { RetrieveTodosResponse } from '../responses/RetrieveTodosResponse'
 //import { TodoUpdate } from '../models/TodoUpdate';
 
 const XAWS = AWSXRay.captureAWS(AWS)
@@ -34,6 +36,60 @@ export class TodosAccess {
 
 		const items = result.Items
 		return items as TodoItem[]
+	}
+
+
+	async retrieveTodos(userId: string, params: GetTodosRequest): Promise<RetrieveTodosResponse> {
+		logger.info('Get all todos item')
+		logger.info('params:', params)
+
+		const FILTER_FIELDS = ['name']
+		const SORT_BY_FIELD = 'name'
+		const ORDER_BY_DESC = 'desc'
+
+		const query: DocumentClient.QueryInput = {
+			TableName: this.todosTable,
+			IndexName: this.todosIndex,
+			KeyConditionExpression: 'userId = :userId',
+			ExpressionAttributeValues: {
+				':userId': userId
+			},
+			Limit: params.pageSize
+		}
+
+		query.ScanIndexForward = params.orderBy?.toLocaleLowerCase() == ORDER_BY_DESC
+
+		if (params.lastItemKey) {
+			query.ExclusiveStartKey = params.lastItemKey
+		}
+
+
+		if (FILTER_FIELDS.includes(params.filterBy?.key?.toLocaleLowerCase())) {
+			query.FilterExpression = 'contains (#name, :name)'
+			query.ExpressionAttributeNames = {
+				'#name': 'name'
+			}
+
+			query.ExpressionAttributeValues = {
+				':userId': userId,
+				':name': params.filterBy.value
+			}
+		}
+
+		const result = await this.docClient
+			.query(query).promise()
+
+		let items = result.Items as TodoItem[]
+		const lastKey = result.LastEvaluatedKey
+
+		if (params.sortBy == SORT_BY_FIELD) {
+			items = items.sort((a, b) => a.name.localeCompare(b.name))
+		}
+
+		return {
+			items: items,
+			lastItemKey: lastKey
+		}
 	}
 
 	async createTodoItem(todoItem: TodoItem): Promise<TodoItem> {
